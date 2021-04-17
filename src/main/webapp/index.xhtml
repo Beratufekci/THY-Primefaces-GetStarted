@@ -68,6 +68,25 @@
 </p:dialog>
 
 <h:form>
+	<p:commandButton value="showUserList" action = "#{checkListController.getDataFromJSONFiles()}" update=":userList" oncomplete = "PF('userList').show()"/>
+</h:form>
+
+<p:dialog widgetVar="userList" closeOnEscape="true" modal="true" header="userList">
+	<h:form id="userList">
+		<p:dataTable value="#{checkListController.users}" var="user" id="userTable">
+			<p:column headerText="name">
+				#{user.name}
+			</p:column>
+			<p:column headerText="surname">
+				#{user.surname}
+			</p:column>
+		</p:dataTable>
+	</h:form>
+</p:dialog>
+
+
+
+<h:form>
     <p:confirmDialog global="true" closeOnEscape="true">
         <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
         <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />

@@ -1,6 +1,10 @@
 package beratufekci.thy.primefaces.controller;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -10,7 +14,13 @@ import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.ViewScoped;
 import javax.faces.context.FacesContext;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import beratufekci.thy.primefaces.entity.Check;
+import beratufekci.thy.primefaces.entity.User;
 import beratufekci.thy.primefaces.service.CheckService;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,8 +40,10 @@ public class CheckListController implements Serializable {
 	private CheckService checkService;
 	
 	private List<Check> checks;
+	private List<User> users = new ArrayList<User>();
 	
 	private Check check = new Check();
+	
 	
 	@PostConstruct
 	public void loadChecks() {
@@ -63,5 +75,46 @@ public class CheckListController implements Serializable {
 		
 		return "";
     }	
+	
+	public void getDataFromJSONFiles(){
+			
+		try {
+			
+			users.clear();
+			
+			JSONParser jsonParser = new JSONParser();
+			FileReader reader = new FileReader("C:\\Users\\pc\\Desktop\\THY\\Primefaces\\Demo\\src\\main\\resources//THY-Users.json");
+			Object obj = jsonParser.parse(reader);
+			JSONObject jo =(JSONObject) obj;
+			JSONArray userList = (JSONArray) jo.get("THYuser");
+			
+			userList.forEach(user -> parseUserObject((JSONObject)user));
+			
+			
+			System.out.println("Showing userList : ");
+			users.forEach(userfe -> System.out.println(userfe.getName() + " " + userfe.getSurname()));
+			
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch(IOException e) {
+			e.printStackTrace();
+		} catch(ParseException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+	public void parseUserObject(JSONObject user) {
+		
+		User jsonUser = new User();
+		
+		jsonUser.setName((String) user.get("name"));
+		jsonUser.setSurname((String) user.get("surname"));
+		
+		users.add(jsonUser);
+				
+		
+	}
 
 }
