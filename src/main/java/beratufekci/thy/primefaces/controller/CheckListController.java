@@ -14,6 +14,12 @@ import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.ViewScoped;
 import javax.faces.context.FacesContext;
 
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -83,7 +89,7 @@ public class CheckListController implements Serializable {
 			users.clear();
 			
 			JSONParser jsonParser = new JSONParser();
-			FileReader reader = new FileReader("C:\\Users\\pc\\Desktop\\THY\\Primefaces\\Demo\\src\\main\\resources//THY-Users.json");
+			FileReader reader = new FileReader("C:\\Users\\pc\\Desktop\\THY\\Primefaces\\Demo\\src\\main\\resources//jsonFiles//THY-Users.json");
 			Object obj = jsonParser.parse(reader);
 			JSONObject jo =(JSONObject) obj;
 			JSONArray userList = (JSONArray) jo.get("THYuser");
@@ -115,6 +121,6 @@ public class CheckListController implements Serializable {
 		users.add(jsonUser);
 				
 		
-	}
+	}	
 
 }
