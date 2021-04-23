@@ -7,8 +7,7 @@
 </h:head>
 <h:body>
 
-<!-- <p:messages id="messages" /> -->
-<p:growl id="messages" />
+<p:growl id="infoMessage" for="infoMessage" />
 
 <p:dataTable value="#{checkListController.checks}" var="check" id="checkTable">
 	<p:column headerText="name">
@@ -22,7 +21,7 @@
 	<p:column headerText="operations">
 		<h:form>
 			<p:commandButton value="edit" action="#{checkListController.setCheck(check)}" update=":checkForm"  oncomplete="PF('checkDialog').show()" />
-			<p:commandButton value="remove" action="#{checkListController.remove(check)}" update=":checkTable, :messages">
+			<p:commandButton value="remove" action="#{checkListController.remove(check)}" update=":checkTable, :infoMessage">
 				<p:confirm header="Confirmation" message="Are you sure?" icon="ui-icon-alert" />
 			</p:commandButton>
 		</h:form>
@@ -53,7 +52,6 @@
 
 <p:dialog widgetVar="checkDialog" closeOnEscape="true" modal="true" header="check">
 <h:form id="checkForm">
-	<p:messages />
 	<p:focus />
 	<p:panelGrid columns="2">
 		name:
@@ -63,18 +61,41 @@
 		<p:inputText value="#{checkListController.check.url}" />
 	</p:panelGrid>
 	<p:commandButton value="save" action="#{checkListController.save()}" 
-					 update="checkForm, :checkTable, :messages"
+					 update="checkForm, :checkTable, :infoMessage"
 					 oncomplete="handleDialogSubmit(args, 'checkDialog')" />
 </h:form>
 </p:dialog>
 
+<!-- show user list -->
+
 <h:form>
-	<p:commandButton value="showUserList" action = "#{checkListController.getDataFromJSONFiles()}" update=":userList" oncomplete = "PF('userList').show()"/>
+
+	<span>
+    	<p:outputLabel for="startDate" value="Start Date: "/>
+    	<p:calendar id="startDate" value="#{checkListController.startDate}" >
+    	</p:calendar>
+    </span>
+    <span>
+    	<p:outputLabel for="endDate" value=" End Date: "/>
+    	<p:calendar id="endDate" value="#{checkListController.endDate}" />
+    </span>
+	
+	<p:commandButton value="show User List" action = "#{checkListController.showUserList}" update=":userList, :warnMessage, :infoMessage"/>
 </h:form>
 
-<p:dialog widgetVar="userList" closeOnEscape="true" modal="true" header="userList">
+<br/>
+
+<p:messages id="warnMessage" for="warnMessage" closable="true" />
+
+
 	<h:form id="userList">
-		<p:dataTable value="#{checkListController.users}" var="user" id="userTable">
+		<p:dataTable value="#{checkListController.userList}" var="user" id="userTable"  rendered="#{checkListController.isValidUserListSize}"
+	         			  paginator="true" rows="10" paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                     	  currentPageReportTemplate="{startRecord}-{endRecord} of {totalRecords} records" paginatorPosition="bottom">
+			<p:column>
+                <f:facet name="header">ID</f:facet>
+                <h:outputText value="#{user.id}" />
+            </p:column>
 			<p:column>
                 <f:facet name="header">Name</f:facet>
                 <h:outputText value="#{user.name}" />
@@ -87,17 +108,17 @@
 		
 		<p:panel header="Export All Data">
             <h:commandLink>
-            	<h:graphicImage value="resources/icons/excel.png" width="100px" height="100px" />
+            	<h:graphicImage value="resources/icons/excel.png" width="70px" height="70px" />
                 <p:dataExporter type="xls" target="userTable" fileName="myFirstExcelFile" />
             </h:commandLink>
             <h:commandLink>
-            	<h:graphicImage value ="resources/icons/pdf.jfif" width="90px" height="90px" />
+            	<h:graphicImage value ="resources/icons/pdf.jfif" width="70px" height="70px" />
                 <p:dataExporter type="pdf" target="userTable" fileName="myFirstPdfFile" />
             </h:commandLink>
        </p:panel>
 		
 	</h:form>
-</p:dialog>
+
 
 
 
