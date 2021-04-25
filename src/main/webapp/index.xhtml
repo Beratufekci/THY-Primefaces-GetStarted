@@ -67,21 +67,30 @@
 </p:dialog>
 
 <!-- show user list -->
-
 <h:form>
 
-	<span>
-    	<p:outputLabel for="startDate" value="Start Date: "/>
-    	<p:calendar id="startDate" value="#{checkListController.startDate}" >
-    	</p:calendar>
-    </span>
-    <span>
-    	<p:outputLabel for="endDate" value=" End Date: "/>
-    	<p:calendar id="endDate" value="#{checkListController.endDate}" />
-    </span>
+	<div >
+		<span>
+    		<p:outputLabel for="@next" value="Country             :"/>
+    		<p:selectOneMenu id="country" value="#{checkListController.countryGroup}">
+    			<f:selectItem itemLabel="Select Country" itemValue=""/>
+    			<f:selectItems value="#{checkListController.countriesGroup}"/>
+    		</p:selectOneMenu>
+    	</span>
+		<span>
+    		<p:outputLabel for="startDate" value="Start Date: "/>
+    		<p:calendar id="startDate" value="#{checkListController.startDate}" >
+    		</p:calendar>
+		</span>
+    	<span>
+    		<p:outputLabel for="endDate" value=" End Date: "/>
+    		<p:calendar id="endDate" value="#{checkListController.endDate}" />
+    	</span>
 	
 	<p:commandButton value="show User List" action = "#{checkListController.showUserList}" update=":userList, :warnMessage, :infoMessage"/>
+  </div>
 </h:form>
+
 
 <br/>
 

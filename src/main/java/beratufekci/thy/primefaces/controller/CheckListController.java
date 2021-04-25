@@ -16,6 +16,8 @@ import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.ViewScoped;
+import javax.faces.model.SelectItem;
+import javax.faces.model.SelectItemGroup;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -46,6 +48,9 @@ public class CheckListController implements Serializable {
 	
 	private Boolean isValidUserListSize = true;
 	
+    private String countryGroup;
+    private List<SelectItem> countriesGroup;
+	
 	@ManagedProperty("#{checkService}")
 	private CheckService checkService;
 	
@@ -58,6 +63,25 @@ public class CheckListController implements Serializable {
 	@PostConstruct
 	public void loadChecks() {
 		checks = checkService.findAll();
+		
+		countriesGroup = new ArrayList<>();
+
+	    SelectItemGroup europeCountries = new SelectItemGroup("Europe Countries");
+	    europeCountries.setSelectItems(new SelectItem[]{
+	            new SelectItem("Germany", "Germany"),
+	            new SelectItem("Turkey", "Turkey"),
+	            new SelectItem("Spain", "Spain")
+	    });
+
+	    SelectItemGroup americaCountries = new SelectItemGroup("America Countries");
+	    americaCountries.setSelectItems(new SelectItem[]{
+	            new SelectItem("United States", "United States"),
+	            new SelectItem("Brazil", "Brazil"),
+	            new SelectItem("Mexico", "Mexico")
+	    });
+
+	    countriesGroup.add(europeCountries);
+	    countriesGroup.add(americaCountries);
 	}
 	
 	public void save() {
@@ -132,7 +156,6 @@ public class CheckListController implements Serializable {
 	public String getJsonDataFromUrl(URL url) {
 
 		//inline will store the JSON data streamed in string format
-		//String inline = "";
 		StringBuilder sb = new StringBuilder();
 			
 		try {
@@ -155,7 +178,6 @@ public class CheckListController implements Serializable {
 				
 				long startTime = System.currentTimeMillis();
 				
-				////start point of string buffer
 			    BufferedReader in = null;
 			    if (conn.getHeaderField("Content-Encoding") != null
 			             && conn.getHeaderField("Content-Encoding").equals("gzip")) {
@@ -169,26 +191,12 @@ public class CheckListController implements Serializable {
 			    	sb.append(inputLine);
 			    }
 			    in.close();
-			    //end point of string buffer
-				
-//				Scanner sc = new Scanner(url.openStream());
-//				while(sc.hasNext())
-//				{
-//					inline+=sc.nextLine();
-//				}
-//
-//				
-//				//Close the stream when reading the data has been finished
-//				sc.close();
 			    
-
 				long endTime = System.currentTimeMillis();
 				
 				System.out.println("it lasted: " + (0.001 * (endTime - startTime)) + " seconds");
 			 }		
 				
-
-			
 			//Disconnect the HttpURLConnection stream
 			conn.disconnect();	
 			
@@ -198,7 +206,6 @@ public class CheckListController implements Serializable {
 		}
 		
 		return sb.toString();
-		//return inline;
 	}
 
 	public void parseJSONData(String JSONData) {
@@ -207,13 +214,8 @@ public class CheckListController implements Serializable {
 				//to convert string to json object
 				Object obj =new JSONParser().parse(JSONData);
 				
-				//for json-server
-				//JSONObject jsonObject = (JSONObject) obj;
-				
 				//to get  query list from json response
 				JSONArray jsonUserList = (JSONArray) obj;
-				//for json-server
-				//JSONArray jsonUserList = (JSONArray) jsonObject.get("users");
 				
 				//to check length of json array
 				if(jsonUserList.size()> 1000) {
