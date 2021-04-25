@@ -1,6 +1,8 @@
 package beratufekci.thy.primefaces.controller;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -8,12 +10,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
+import java.util.zip.GZIPInputStream;
 
 import javax.annotation.PostConstruct;
-import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.ViewScoped;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -84,6 +87,8 @@ public class CheckListController implements Serializable {
 	
 	//to show user list
 	public void showUserList(){
+		
+				Long startTime = System.currentTimeMillis();
 			
 		 		//to clean the data table and avoid dublicate value for list called queries
 				userList.clear();
@@ -100,7 +105,7 @@ public class CheckListController implements Serializable {
 						
 					try {
 						//the url address which json data is stored in 
-						URL url = new URL("https://mocki.io/v1/a3f09385-42e2-44ee-9d5d-e15428e3490b");
+						URL url = new URL("http://localhost:3000/users");
 			
 						//to get json data by using specified url address
 						JSONData = this.getJsonDataFromUrl(url);
@@ -110,6 +115,10 @@ public class CheckListController implements Serializable {
 
 						//to show queryList and selected aqd record
 			            this.showValues();
+			            
+			            Long endTime = System.currentTimeMillis();
+			            
+			            System.out.println("Total time: " + (0.001*(endTime - startTime)) + " seconds");
 								
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
@@ -123,42 +132,63 @@ public class CheckListController implements Serializable {
 	public String getJsonDataFromUrl(URL url) {
 
 		//inline will store the JSON data streamed in string format
-		String inline = "";
+		//String inline = "";
+		StringBuilder sb = new StringBuilder();
 			
 		try {
 			
 			//Parse URL into HttpURLConnection in order to open the connection in order to get the JSON data
-			HttpURLConnection conn;
-			conn = (HttpURLConnection)url.openConnection();
+			HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 			
 			//Set the request to GET or POST as per the requirements
 			conn.setRequestMethod("GET");
 			
 			//Use the connect method to create the connection bridge
-			conn.connect();
-			
-			//Get the response status of the Rest API
-			int responsecode = conn.getResponseCode();
-			System.out.println("Response code is: " +responsecode);
-				
+			conn.connect();		
 			//Iterating condition to if response code is not 200 then throw a runtime exception
 			//else continue the actual process of getting the JSON data
-			if(responsecode != 200) {
-				throw new RuntimeException("HttpResponseCode: " +responsecode);
+			
+			if(conn.getResponseCode() != 200) {
+				throw new RuntimeException("HttpResponseCode: " +conn.getResponseCode());
 			}else
 			 {
-				//Scanner functionality will read the JSON data from the stream
-				Scanner sc = new Scanner(url.openStream());
-				while(sc.hasNext())
-				{
-					inline+=sc.nextLine();
-				}
-				System.out.println("\nJSON Response in String format"); 
-				System.out.println(inline);
 				
-				//Close the stream when reading the data has been finished
-				sc.close();
-			 }
+				long startTime = System.currentTimeMillis();
+				
+				////start point of string buffer
+			    BufferedReader in = null;
+			    if (conn.getHeaderField("Content-Encoding") != null
+			             && conn.getHeaderField("Content-Encoding").equals("gzip")) {
+			    in = new BufferedReader(new InputStreamReader(new GZIPInputStream(conn.getInputStream())));
+			    } else {
+			      in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			    }
+			    String inputLine;
+
+			    while ((inputLine = in.readLine()) != null) {
+			    	sb.append(inputLine);
+			    }
+			    in.close();
+			    //end point of string buffer
+				
+//				Scanner sc = new Scanner(url.openStream());
+//				while(sc.hasNext())
+//				{
+//					inline+=sc.nextLine();
+//				}
+//
+//				
+//				//Close the stream when reading the data has been finished
+//				sc.close();
+			    
+
+				long endTime = System.currentTimeMillis();
+				
+				System.out.println("it lasted: " + (0.001 * (endTime - startTime)) + " seconds");
+			 }		
+				
+
+			
 			//Disconnect the HttpURLConnection stream
 			conn.disconnect();	
 			
@@ -167,60 +197,60 @@ public class CheckListController implements Serializable {
 			e.printStackTrace();
 		}
 		
-		return inline;
+		return sb.toString();
+		//return inline;
 	}
 
 	public void parseJSONData(String JSONData) {
-		try {
-			//to convert string to json object
-			JSONParser jsonParser = new JSONParser(); 
-			Object obj;
-			obj = jsonParser.parse(JSONData);
-			JSONObject jo = (JSONObject) obj;
-			
-			//to get  query list from json response
-			JSONArray jsonUserList = (JSONArray) jo.get("users");
-			
-			//to check length of json array
-			if(jsonUserList.size() > 1000) {
-				//to not show data table
-				this.isValidUserListSize = false;
+		
+			try {
+				//to convert string to json object
+				Object obj =new JSONParser().parse(JSONData);
 				
-				//to show warn message
-				AbstractBean.showMessage(MessageType.WARN_MESSAGE,"We'd prefer to not showing data table due to query list size in case of facing performance problem. You can export to excel and view content of user list.");
+				//for json-server
+				//JSONObject jsonObject = (JSONObject) obj;
+				
+				//to get  query list from json response
+				JSONArray jsonUserList = (JSONArray) obj;
+				//for json-server
+				//JSONArray jsonUserList = (JSONArray) jsonObject.get("users");
+				
+				//to check length of json array
+				if(jsonUserList.size()> 1000) {
+					//to not show data table
+					this.isValidUserListSize = false;
+					
+					//to show warn message
+					AbstractBean.showMessage(MessageType.WARN_MESSAGE,"We'd prefer not to show data table due to query list size in case of facing performance problem. You can export to excel and view content of user list.");
+				}
+				
+				//to add json objects in arrayList called users
+				jsonUserList.forEach(user -> addToUserList((JSONObject)user));
+				
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 			
-			//to add json objects in arrayList called users
-			jsonUserList.forEach(query -> addToUserList((JSONObject)query));
-			
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 	}
 	
 	public void addToUserList(JSONObject user) {
+		//to set values before user constructor
+		Long id = (Long) user.get("id");
+		String name = (String) user.get("name");
+		String surname =  (String) user.get("surname");
 		
-		User jsonUser = new User();
-		
-		//to set attribute to use
-		jsonUser.setId((Long) user.get("id"));
-		jsonUser.setName((String) user.get("name"));
-		jsonUser.setSurname((String) user.get("surname"));
-		
+		//to generate user instance
+		User jsonUser = new User(id, name, surname);
+			
 		//to add user list
-		userList.add(jsonUser);
-				
-		
+		userList.add(jsonUser);				
 	}	
 	
 	public void showValues() {
-		//to show userList
-		System.out.println("Showing UserList : ");   
-		userList.forEach(user -> System.out.println(user.getId() + " " + user.getName() + " " + user.getSurname()));
-		
 		//to show user list size
-		System.out.println("User List size : " + userList.size() + " \n");
+		System.out.println("User List size : " + userList.size());
 	}
 
 }
