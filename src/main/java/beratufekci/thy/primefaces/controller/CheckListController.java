@@ -9,10 +9,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.zip.GZIPInputStream;
 
 import javax.annotation.PostConstruct;
+import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.ViewScoped;
@@ -43,21 +45,30 @@ public class CheckListController implements Serializable {
 	private String name;
 	private String password;
 	
-	private Date startDate = new Date();
-	private Date endDate = new Date();
-	
-	private Boolean isValidUserListSize = true;
-	
-    private String countryGroup;
-    private List<SelectItem> countriesGroup;
+	private Check check = new Check();
+	private List<Check> checks;
 	
 	@ManagedProperty("#{checkService}")
 	private CheckService checkService;
 	
-	private List<Check> checks;
+	
+	
+    private String countryGroup;
+    private List<SelectItem> countriesGroup;
+	
+	private Date startDate = new Date();
+	private Date endDate = new Date();
+	
+	MessageType infoMessage = MessageType.INFO_MESSAGE;
+	MessageType warnMessage = MessageType.WARN_MESSAGE;
+	
+	private final int MAX_SHOWABLE_LIST_SIZE = 1000;
+	
+	private Boolean isUserTableRendered = true;
+	private Boolean isExportToExcelButtonRendered = false;
+	
 	private List<User> userList = new ArrayList<User>();
 	
-	private Check check = new Check();
 	
 	
 	@PostConstruct
@@ -88,13 +99,13 @@ public class CheckListController implements Serializable {
 		checkService.save(check);
 		check = new Check();
 		checks = checkService.findAll();
-		AbstractBean.showMessage(MessageType.INFO_MESSAGE, "Check saved!");
+		AbstractBean.showMessage(infoMessage,FacesMessage.SEVERITY_INFO, "Check saved!","Check kaydedildi");
 	}
 	
 	public void remove(Check check) {
 		checkService.remove(check);
 		checks = checkService.findAll();
-		AbstractBean.showMessage(MessageType.INFO_MESSAGE, "Check removed!");
+		AbstractBean.showMessage(infoMessage,FacesMessage.SEVERITY_INFO, "Check removed!","Check silindi");
 	}
 	
 	public void clear() {
@@ -102,82 +113,73 @@ public class CheckListController implements Serializable {
 	}
 	
 	public String login() {
-		AbstractBean.showMessage(MessageType.INFO_MESSAGE, "User logined!");
+		AbstractBean.showMessage(infoMessage,FacesMessage.SEVERITY_INFO, "User logined!","Kullanýcý giris yaptý.");
 		
 		return "";
     }
 	
 	
 	
-	//to show user list
-	public void showUserList(){
-		
-				Long startTime = System.currentTimeMillis();
-			
-		 		//to clean the data table and avoid dublicate value for list called queries
-				userList.clear();
+	
+	
+	/**
+	*Created by Berat Tufekci 
+	*<h1>Method Info:</h1>
+	*this method will be invoked when user click the show user list button which is located in index.xhtml file
+	*basically this method retrieve json data from rest api, then parse it and add queries to show in  user list which is located in index.xhtml file
+	*@since 03.06.2021
+	*@param Nothing
+	*@return Nothing
+	*@exception IOException
+	*/
+	public void showUserTable() {	
+		 		avoidDublicatedValues();
+				getInitializedPageBack();
 				
-				//to show initiliazed page back
-				this.isValidUserListSize = true;
-				
-				if(startDate.after(endDate)) {		
-					//to show info message
-					AbstractBean.showMessage(MessageType.INFO_MESSAGE,"Start date must be earlier than End date");   
-				}else {		
-					//inline will store the JSON data streamed in string format
-					String JSONData = "";
-						
+				if(isSuitableDate()) {	
 					try {
-						//the url address which json data is stored in 
-						URL url = new URL("http://localhost:3000/users");
-			
-						//to get json data by using specified url address
-						JSONData = this.getJsonDataFromUrl(url);
+						URL url = new URL("http://localhost:3000/users?name=name1");
+						parseJSONData(getJsonDataFromRestAPI(url));
 							
-						//to parse json object
-			            this.parseJSONData(JSONData);
-
-						//to show queryList and selected aqd record
-			            this.showValues();
-			            
-			            Long endTime = System.currentTimeMillis();
-			            
-			            System.out.println("Total time: " + (0.001*(endTime - startTime)) + " seconds");
-								
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
-					}
-						
+					}	
 				}
-		
 	}
 	
-	public String getJsonDataFromUrl(URL url) {
+	private void avoidDublicatedValues() {
+		userList.clear();	
+	}
 
-		//inline will store the JSON data streamed in string format
-		StringBuilder sb = new StringBuilder();
+	private void getInitializedPageBack() {
+		this.isUserTableRendered = true;
+		this.isExportToExcelButtonRendered = false;		
+	}
+
+	private Boolean isSuitableDate() {
+		
+		if(startDate.after(endDate)) {
+			AbstractBean.showMessage(infoMessage,FacesMessage.SEVERITY_INFO,"Start date must be earlier than End date","Baslangýc tarihi bitis tarihinden once olmalýdýr");
+			return false;
+		}
+		return true;	
+	}
+
+	private String getJsonDataFromRestAPI(URL url) {
+
+		StringBuilder jsonData = new StringBuilder();
 			
 		try {
 			
-			//Parse URL into HttpURLConnection in order to open the connection in order to get the JSON data
 			HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 			
-			//Set the request to GET or POST as per the requirements
 			conn.setRequestMethod("GET");
-			
-			//Use the connect method to create the connection bridge
 			conn.connect();		
-			//Iterating condition to if response code is not 200 then throw a runtime exception
-			//else continue the actual process of getting the JSON data
 			
 			if(conn.getResponseCode() != 200) {
 				throw new RuntimeException("HttpResponseCode: " +conn.getResponseCode());
 			}else
 			 {
-				
-				long startTime = System.currentTimeMillis();
-				
 			    BufferedReader in = null;
 			    if (conn.getHeaderField("Content-Encoding") != null
 			             && conn.getHeaderField("Content-Encoding").equals("gzip")) {
@@ -188,71 +190,67 @@ public class CheckListController implements Serializable {
 			    String inputLine;
 
 			    while ((inputLine = in.readLine()) != null) {
-			    	sb.append(inputLine);
+			    	jsonData.append(inputLine);
 			    }
 			    in.close();
-			    
-				long endTime = System.currentTimeMillis();
-				
-				System.out.println("it lasted: " + (0.001 * (endTime - startTime)) + " seconds");
 			 }		
-				
-			//Disconnect the HttpURLConnection stream
 			conn.disconnect();	
 			
 		}  catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		return sb.toString();
+		return jsonData.toString();
 	}
 
-	public void parseJSONData(String JSONData) {
+	private void parseJSONData(String jsonData) {
 		
 			try {
-				//to convert string to json object
-				Object obj =new JSONParser().parse(JSONData);
+				Object obj =new JSONParser().parse(jsonData);
+				JSONArray jsonUsers = (JSONArray) obj;
 				
-				//to get  query list from json response
-				JSONArray jsonUserList = (JSONArray) obj;
-				
-				//to check length of json array
-				if(jsonUserList.size()> 1000) {
-					//to not show data table
-					this.isValidUserListSize = false;
-					
-					//to show warn message
-					AbstractBean.showMessage(MessageType.WARN_MESSAGE,"We'd prefer not to show data table due to query list size in case of facing performance problem. You can export to excel and view content of user list.");
+				if(!isJsonUsersEmpty(jsonUsers)) {
+					this.isExportToExcelButtonRendered = true;
+					isSuitableTableSize(jsonUsers);	
 				}
-				
-				//to add json objects in arrayList called users
-				jsonUserList.forEach(user -> addToUserList((JSONObject)user));
+						
+				jsonUsers.forEach(user -> addToUserList((JSONObject)user));
 				
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
 		
 	}
 	
-	public void addToUserList(JSONObject user) {
-		//to set values before user constructor
+	private void addToUserList(JSONObject user) {
 		Long id = (Long) user.get("id");
 		String name = (String) user.get("name");
 		String surname =  (String) user.get("surname");
 		
-		//to generate user instance
 		User jsonUser = new User(id, name, surname);
 			
-		//to add user list
-		userList.add(jsonUser);				
+		userList.add(jsonUser);		
 	}	
 	
-	public void showValues() {
-		//to show user list size
-		System.out.println("User List size : " + userList.size());
+	private void isSuitableTableSize(JSONArray jsonUsers) {
+		if(jsonUsers.size() > this.MAX_SHOWABLE_LIST_SIZE) {
+			hideUserTable("Please export to excel to show the result","(Sorgu sonucunu gormek icin exceli cýkartýn)");
+		}	
 	}
+
+	private boolean isJsonUsersEmpty(JSONArray jsonUsers) {
+		if (jsonUsers.isEmpty()) {
+			hideUserTable("User table is empty.", "(Aradýgýnýz kriterlere uygun kullanýcý bulunamamýstýr.)");
+			return true;
+		}
+		return false;
+	}
+
+	private void hideUserTable(String message, String detail) {
+		this.isUserTableRendered = false;
+		AbstractBean.showMessage(warnMessage,FacesMessage.SEVERITY_WARN, message, detail);
+	}
+
 
 }

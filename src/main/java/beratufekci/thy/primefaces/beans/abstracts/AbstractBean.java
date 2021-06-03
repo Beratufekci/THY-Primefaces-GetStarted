@@ -6,16 +6,13 @@ import javax.faces.context.FacesContext;
 
 public class AbstractBean {
 	
-	public static void showMessage(MessageType severityType ,String message) {
+		public static void showMessage(MessageType messageType, Severity severity ,String message,String detail) {
+			
+			FacesContext context = FacesContext.getCurrentInstance();
 		
-		FacesContext context = FacesContext.getCurrentInstance();
-		
-		if(severityType == MessageType.WARN_MESSAGE) {
-			context.addMessage("warnMessage", new FacesMessage(FacesMessage.SEVERITY_WARN,message, null));
-		}else if(severityType == MessageType.INFO_MESSAGE) {
-			context.addMessage("infoMessage", new FacesMessage(FacesMessage.SEVERITY_INFO,message, null));
-		}
-		
+			context.addMessage(messageType.toString(), new FacesMessage(severity,message, detail));
+	    
 	}
+
 
 }

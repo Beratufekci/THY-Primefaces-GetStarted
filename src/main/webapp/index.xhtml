@@ -7,7 +7,7 @@
 </h:head>
 <h:body>
 
-<p:growl id="infoMessage" for="infoMessage" />
+<p:growl id="infoMessage" for="INFO_MESSAGE" showDetail="true" />
 
 <p:dataTable value="#{checkListController.checks}" var="check" id="checkTable">
 	<p:column headerText="name">
@@ -66,6 +66,10 @@
 </h:form>
 </p:dialog>
 
+
+
+
+
 <!-- show user list -->
 <h:form>
 
@@ -87,18 +91,18 @@
     		<p:calendar id="endDate" value="#{checkListController.endDate}" />
     	</span>
 	
-	<p:commandButton value="show User List" action = "#{checkListController.showUserList}" update=":userList, :warnMessage, :infoMessage"/>
+	<p:commandButton value="show User List" action = "#{checkListController.showUserTable}" update=":userTable, :warnMessage, :infoMessage"/>
   </div>
 </h:form>
 
 
 <br/>
 
-<p:messages id="warnMessage" for="warnMessage" closable="true" />
+<p:messages id="warnMessage" for="WARN_MESSAGE" closable="true" showDetail="true" />
 
 
-	<h:form id="userList">
-		<p:dataTable value="#{checkListController.userList}" var="user" id="userTable"  rendered="#{checkListController.isValidUserListSize}"
+	<h:form id="userTable">
+		<p:dataTable value="#{checkListController.userList}" var="user" id="userTable"  rendered="#{checkListController.isUserTableRendered}"
 	         			  paginator="true" rows="10" paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
                      	  currentPageReportTemplate="{startRecord}-{endRecord} of {totalRecords} records" paginatorPosition="bottom">
 			<p:column>
@@ -115,7 +119,7 @@
             </p:column>
 		</p:dataTable>
 		
-		<p:panel header="Export All Data">
+		<p:panel header="Export All Data" rendered = "#{checkListController.isExportToExcelButtonRendered}">
             <h:commandLink>
             	<h:graphicImage value="resources/icons/excel.png" width="70px" height="70px" />
                 <p:dataExporter type="xls" target="userTable" fileName="myFirstExcelFile" />
